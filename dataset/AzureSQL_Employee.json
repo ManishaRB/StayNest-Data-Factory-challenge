@@ -1,0 +1,25 @@
+{
+	"name": "AzureSQL_Employee",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"p_schema_nm": {
+				"type": "string"
+			},
+			"p_table_nm": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "initial_control_table"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

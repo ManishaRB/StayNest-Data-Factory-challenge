@@ -1,0 +1,76 @@
+{
+	"name": "p_ADLStoAzureSQL",
+	"properties": {
+		"activities": [
+			{
+				"name": "p_ADLStoAzureSQL",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"writeBehavior": "insert",
+						"sqlWriterUseTableLock": false,
+						"tableOption": "autoCreate",
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_Employee_tgt_Storage",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_Filesystem": "learnit",
+							"p_Directory": "source",
+							"p_Filename": "Employee_AzureSQL.csv"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSQL_Employee",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_schema_nm": "dbo",
+							"p_table_nm": " "
+						}
+					}
+				]
+			}
+		],
+		"folder": {
+			"name": "Practice"
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-10-01T00:15:19Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

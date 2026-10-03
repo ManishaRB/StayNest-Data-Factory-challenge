@@ -1,0 +1,15 @@
+{
+	"name": "df-dev-azure-cb",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "8d94e626-8bef-4375-9711-eb1ef32dd061",
+		"tenantId": "8960d693-6532-4422-9c8b-c764aa80bd7f"
+	}
+}
