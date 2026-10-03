@@ -1,0 +1,33 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "df-dev-azure-cb"
+		},
+		"AzureSqlDatabase_password": {
+			"value": ""
+		},
+		"LS_AzureDataLakeStorage_accountKey": {
+			"value": ""
+		},
+		"AzureSqlDatabase_properties_typeProperties_server": {
+			"value": "server-dev-azure.database.windows.net"
+		},
+		"AzureSqlDatabase_properties_typeProperties_database": {
+			"value": "sql-dev-azure"
+		},
+		"AzureSqlDatabase_properties_typeProperties_userName": {
+			"value": "sqlserveradmin"
+		},
+		"LS_AzureDataLakeStorage_properties_typeProperties_url": {
+			"value": "https://stdevazure.dfs.core.windows.net/"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
