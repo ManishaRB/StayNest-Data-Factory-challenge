@@ -17,8 +17,14 @@
 		"type": "AzureSqlTable",
 		"schema": [],
 		"typeProperties": {
-			"schema": "dbo",
-			"table": "initial_control_table"
+			"schema": {
+				"value": "@dataset().p_schema_nm",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().p_table_nm",
+				"type": "Expression"
+			}
 		}
 	},
 	"type": "Microsoft.DataFactory/factories/datasets"
