@@ -39,7 +39,7 @@
 				}
 			},
 			{
-				"name": "Process_Table_In_Loop",
+				"name": "Process_Tables_In_Loop",
 				"type": "ForEach",
 				"dependsOn": [
 					{
