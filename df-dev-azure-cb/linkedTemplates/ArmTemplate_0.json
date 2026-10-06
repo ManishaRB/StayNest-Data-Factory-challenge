@@ -1205,10 +1205,6 @@
 										},
 										"sink": {
 											"type": "AzureSqlSink",
-											"preCopyScript": {
-												"value": "truncate table @{item().target_schema}.@{item().target_table}",
-												"type": "Expression"
-											},
 											"writeBehavior": "insert",
 											"sqlWriterUseTableLock": false,
 											"tableOption": "autoCreate",
