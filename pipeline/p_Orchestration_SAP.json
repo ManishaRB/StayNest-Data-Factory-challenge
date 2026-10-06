@@ -1,0 +1,218 @@
+{
+	"name": "p_Orchestration_SAP",
+	"properties": {
+		"activities": [
+			{
+				"name": "lkp_Control_Table_SAP",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "select * from dbo.initial_control_table where source_system='SAP'",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "AzureSQL_Employee",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_schema_nm": {
+								"value": " ",
+								"type": "Expression"
+							},
+							"p_table_nm": {
+								"value": " ",
+								"type": "Expression"
+							}
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Process_Table_In_Loop",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "lkp_Control_Table_SAP",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('lkp_Control_Table_SAP').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Copy_Data_From_Source",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "AzureSQL_Employee",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_schema_nm": {
+											"value": "@item().source_schema",
+											"type": "Expression"
+										},
+										"p_table_nm": {
+											"value": "@item().source_table",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_Employee_tgt_Storage",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_Filesystem": "learnit",
+										"p_Directory": "target/SAP_NEW",
+										"p_Filename": {
+											"value": "@concat(item().source_table,'.csv')",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Copy_From_ADLS_To_Target",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Copy_Data_From_Source",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"preCopyScript": {
+										"value": "truncate table @{item().target_schema}.@{item().target_table}",
+										"type": "Expression"
+									},
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false,
+									"tableOption": "autoCreate",
+									"disableMetricsCollection": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_Employee_tgt_Storage",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_Filesystem": "learnit",
+										"p_Directory": "target/SAP_NEW",
+										"p_Filename": "@concat(item().source_table,'.csv')"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "AzureSQL_Employee",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_schema_nm": {
+											"value": "@item().target_schema",
+											"type": "Expression"
+										},
+										"p_table_nm": {
+											"value": "@item().target_table",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "Practice"
+		},
+		"annotations": []
+	}
+}
