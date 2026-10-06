@@ -649,7 +649,7 @@
 						}
 					},
 					{
-						"name": "Process_Table_In_Loop",
+						"name": "Process_Tables_In_Loop",
 						"type": "ForEach",
 						"dependsOn": [
 							{
@@ -934,8 +934,14 @@
 				"type": "AzureSqlTable",
 				"schema": [],
 				"typeProperties": {
-					"schema": "dbo",
-					"table": "initial_control_table"
+					"schema": {
+						"value": "@dataset().p_schema_nm",
+						"type": "Expression"
+					},
+					"table": {
+						"value": "@dataset().p_table_nm",
+						"type": "Expression"
+					}
 				}
 			},
 			"dependsOn": [
