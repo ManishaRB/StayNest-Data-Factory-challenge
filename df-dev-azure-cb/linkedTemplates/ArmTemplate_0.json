@@ -1251,6 +1251,121 @@
 											}
 										}
 									]
+								},
+								{
+									"name": "Copy_Data_From_ADLS_To_Archieve",
+									"type": "Copy",
+									"dependsOn": [
+										{
+											"activity": "Copy_From_ADLS_To_Target",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "DelimitedTextSource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "DelimitedTextReadSettings"
+											}
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".txt"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_Employee_tgt_Storage",
+											"type": "DatasetReference",
+											"parameters": {
+												"p_Filesystem": "learnit",
+												"p_Directory": "target/SAP_NEW",
+												"p_Filename": "@concat(item().source_table,'.csv')"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_Employee_tgt_Storage",
+											"type": "DatasetReference",
+											"parameters": {
+												"p_Filesystem": "learnit",
+												"p_Directory": "Archive/SAP_New",
+												"p_Filename": {
+													"value": "@concat(item().source_table,utcNow(),'.csv')",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								},
+								{
+									"name": "Delete_From_Main_Folder",
+									"type": "Delete",
+									"dependsOn": [
+										{
+											"activity": "Copy_Data_From_ADLS_To_Archieve",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "ds_Employee_tgt_Storage",
+											"type": "DatasetReference",
+											"parameters": {
+												"p_Filesystem": "learnit",
+												"p_Directory": "target/SAP_NEW",
+												"p_Filename": "@concat(item().source_table,'.csv')"
+											}
+										},
+										"enableLogging": false,
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										}
+									}
 								}
 							]
 						}
