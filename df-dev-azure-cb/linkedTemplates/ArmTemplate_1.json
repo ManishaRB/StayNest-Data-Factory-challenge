@@ -13,14 +13,14 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('factoryName'), '/p_Orchestration_SAP_Incr')]",
+			"name": "[concat(parameters('factoryName'), '/p_StayNestRawToBronze')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"activities": [
 					{
-						"name": "lkp_Control_Table_SAP",
-						"type": "Lookup",
+						"name": "p_StayNestRawToBronze",
+						"type": "Copy",
 						"dependsOn": [],
 						"policy": {
 							"timeout": "0.12:00:00",
@@ -32,369 +32,58 @@
 						"userProperties": [],
 						"typeProperties": {
 							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderQuery": {
-									"value": "select * from dbo.initial_control_table where source_system=@{pipeline().parameters.source_system} and active_flag='Y' and load_type=@{pipeline().parameters.Load_Type}",
-									"type": "Expression"
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
 								},
-								"queryTimeout": "02:00:00",
-								"partitionOption": "None"
-							},
-							"dataset": {
-								"referenceName": "AzureSQL_Employee",
-								"type": "DatasetReference",
-								"parameters": {
-									"p_schema_nm": {
-										"value": " ",
-										"type": "Expression"
-									},
-									"p_table_nm": {
-										"value": " ",
-										"type": "Expression"
-									}
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
 								}
 							},
-							"firstRowOnly": false
-						}
-					},
-					{
-						"name": "Process_Tables_In_Loop",
-						"type": "ForEach",
-						"dependsOn": [
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
 							{
-								"activity": "lkp_Control_Table_SAP",
-								"dependencyConditions": [
-									"Succeeded"
-								]
+								"referenceName": "ds_source",
+								"type": "DatasetReference",
+								"parameters": {}
 							}
 						],
-						"userProperties": [],
-						"typeProperties": {
-							"items": {
-								"value": "@activity('lkp_Control_Table_SAP').output.value",
-								"type": "Expression"
-							},
-							"activities": [
-								{
-									"name": "Copy_Data_From_Source",
-									"type": "Copy",
-									"dependsOn": [],
-									"policy": {
-										"timeout": "0.12:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"source": {
-											"type": "AzureSqlSource",
-											"sqlReaderQuery": {
-												"value": "select * from @{item().source_schema}.@{item().source_table} where @{item().watermark_column} > '@{item().watermark_value}'",
-												"type": "Expression"
-											},
-											"queryTimeout": "02:00:00",
-											"partitionOption": "None"
-										},
-										"sink": {
-											"type": "DelimitedTextSink",
-											"storeSettings": {
-												"type": "AzureBlobFSWriteSettings"
-											},
-											"formatSettings": {
-												"type": "DelimitedTextWriteSettings",
-												"quoteAllText": true,
-												"fileExtension": ".txt"
-											}
-										},
-										"enableStaging": false,
-										"translator": {
-											"type": "TabularTranslator",
-											"typeConversion": true,
-											"typeConversionSettings": {
-												"allowDataTruncation": true,
-												"treatBooleanAsNumber": false
-											}
-										}
-									},
-									"inputs": [
-										{
-											"referenceName": "AzureSQL_Employee",
-											"type": "DatasetReference",
-											"parameters": {
-												"p_schema_nm": {
-													"value": " ",
-													"type": "Expression"
-												},
-												"p_table_nm": {
-													"value": " ",
-													"type": "Expression"
-												}
-											}
-										}
-									],
-									"outputs": [
-										{
-											"referenceName": "ds_Employee_tgt_Storage",
-											"type": "DatasetReference",
-											"parameters": {
-												"p_Filesystem": "learnit",
-												"p_Directory": "target/SAP_NEW",
-												"p_Filename": {
-													"value": "@concat(item().source_table,'.csv')",
-													"type": "Expression"
-												}
-											}
-										}
-									]
-								},
-								{
-									"name": "Copy_From_ADLS_To_Target",
-									"type": "Copy",
-									"dependsOn": [
-										{
-											"activity": "Copy_Data_From_Source",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "0.12:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"source": {
-											"type": "DelimitedTextSource",
-											"storeSettings": {
-												"type": "AzureBlobFSReadSettings",
-												"recursive": true,
-												"enablePartitionDiscovery": false
-											},
-											"formatSettings": {
-												"type": "DelimitedTextReadSettings"
-											}
-										},
-										"sink": {
-											"type": "AzureSqlSink",
-											"writeBehavior": "insert",
-											"sqlWriterUseTableLock": false,
-											"tableOption": "autoCreate",
-											"disableMetricsCollection": false
-										},
-										"enableStaging": false,
-										"translator": {
-											"type": "TabularTranslator",
-											"typeConversion": true,
-											"typeConversionSettings": {
-												"allowDataTruncation": true,
-												"treatBooleanAsNumber": false
-											}
-										}
-									},
-									"inputs": [
-										{
-											"referenceName": "ds_Employee_tgt_Storage",
-											"type": "DatasetReference",
-											"parameters": {
-												"p_Filesystem": "learnit",
-												"p_Directory": "target/SAP_NEW",
-												"p_Filename": "@concat(item().source_table,'.csv')"
-											}
-										}
-									],
-									"outputs": [
-										{
-											"referenceName": "AzureSQL_Employee",
-											"type": "DatasetReference",
-											"parameters": {
-												"p_schema_nm": {
-													"value": "@item().target_schema",
-													"type": "Expression"
-												},
-												"p_table_nm": {
-													"value": "@item().target_table",
-													"type": "Expression"
-												}
-											}
-										}
-									]
-								},
-								{
-									"name": "Copy_Data_From_ADLS_To_Archieve",
-									"type": "Copy",
-									"dependsOn": [
-										{
-											"activity": "Copy_From_ADLS_To_Target",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "0.12:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"source": {
-											"type": "DelimitedTextSource",
-											"storeSettings": {
-												"type": "AzureBlobFSReadSettings",
-												"recursive": true,
-												"enablePartitionDiscovery": false
-											},
-											"formatSettings": {
-												"type": "DelimitedTextReadSettings"
-											}
-										},
-										"sink": {
-											"type": "DelimitedTextSink",
-											"storeSettings": {
-												"type": "AzureBlobFSWriteSettings"
-											},
-											"formatSettings": {
-												"type": "DelimitedTextWriteSettings",
-												"quoteAllText": true,
-												"fileExtension": ".txt"
-											}
-										},
-										"enableStaging": false,
-										"translator": {
-											"type": "TabularTranslator",
-											"typeConversion": true,
-											"typeConversionSettings": {
-												"allowDataTruncation": true,
-												"treatBooleanAsNumber": false
-											}
-										}
-									},
-									"inputs": [
-										{
-											"referenceName": "ds_Employee_tgt_Storage",
-											"type": "DatasetReference",
-											"parameters": {
-												"p_Filesystem": "learnit",
-												"p_Directory": "target/SAP_NEW",
-												"p_Filename": "@concat(item().source_table,'.csv')"
-											}
-										}
-									],
-									"outputs": [
-										{
-											"referenceName": "ds_Employee_tgt_Storage",
-											"type": "DatasetReference",
-											"parameters": {
-												"p_Filesystem": "learnit",
-												"p_Directory": "Archive/SAP_New",
-												"p_Filename": {
-													"value": "@concat(item().source_table,utcNow(),'.csv')",
-													"type": "Expression"
-												}
-											}
-										}
-									]
-								},
-								{
-									"name": "Delete_From_Main_Folder",
-									"type": "Delete",
-									"dependsOn": [
-										{
-											"activity": "Copy_Data_From_ADLS_To_Archieve",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "0.12:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"dataset": {
-											"referenceName": "ds_Employee_tgt_Storage",
-											"type": "DatasetReference",
-											"parameters": {
-												"p_Filesystem": "learnit",
-												"p_Directory": "target/SAP_NEW",
-												"p_Filename": "@concat(item().source_table,'.csv')"
-											}
-										},
-										"enableLogging": false,
-										"storeSettings": {
-											"type": "AzureBlobFSReadSettings",
-											"recursive": true,
-											"enablePartitionDiscovery": false
-										}
-									}
-								},
-								{
-									"name": "UpdateWatermarkColumnValue",
-									"type": "Script",
-									"dependsOn": [
-										{
-											"activity": "Delete_From_Main_Folder",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "0.12:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"linkedServiceName": {
-										"referenceName": "AzureSqlDatabase",
-										"type": "LinkedServiceReference"
-									},
-									"typeProperties": {
-										"scripts": [
-											{
-												"type": "Query",
-												"text": {
-													"value": "update dbo.initial_control_table set watermark_value=getdate() where source_schema='@{item().source_schema}' and source_table='@{item().source_table}';",
-													"type": "Expression"
-												}
-											}
-										],
-										"scriptBlockExecutionTimeout": "02:00:00"
-									}
-								}
-							]
-						}
+						"outputs": [
+							{
+								"referenceName": "ds_sink",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
 					}
 				],
 				"policy": {
 					"elapsedTimeMetric": {}
 				},
-				"parameters": {
-					"source_system": {
-						"type": "string",
-						"defaultValue": "'SAP'"
-					},
-					"Load_Type": {
-						"type": "string",
-						"defaultValue": "'Incremental'"
-					}
-				},
 				"folder": {
-					"name": "Practice"
+					"name": "StayNest"
 				},
 				"annotations": []
 			},
