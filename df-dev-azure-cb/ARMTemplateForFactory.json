@@ -2072,6 +2072,9 @@
 				"policy": {
 					"elapsedTimeMetric": {}
 				},
+				"folder": {
+					"name": "Practice"
+				},
 				"annotations": []
 			},
 			"dependsOn": [
