@@ -1,0 +1,207 @@
+{
+	"name": "p_Check_Size_OfTheFile",
+	"properties": {
+		"activities": [
+			{
+				"name": "TraverseThroughAllFiles",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_Employee_tgt_Storage",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_Filesystem": "learnit",
+							"p_Directory": "source",
+							"p_Filename": {
+								"value": " ",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ProcessOnlyFiles",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "TraverseThroughAllFiles",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('TraverseThroughAllFiles').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@equals(item().type,'File')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ProcessAllFiles",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "ProcessOnlyFiles",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('ProcessOnlyFiles').output.Value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "CopyFilesFromSourceToTarget",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "SizeOfFiles",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_Employee_tgt_Storage",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_Filesystem": "learnit",
+										"p_Directory": "source",
+										"p_Filename": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_Employee_tgt_Storage",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_Filesystem": "learnit",
+										"p_Directory": "target",
+										"p_Filename": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "SizeOfFiles",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_Employee_tgt_Storage",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_Filesystem": "learnit",
+										"p_Directory": "source",
+										"p_Filename": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"size"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"annotations": []
+	}
+}

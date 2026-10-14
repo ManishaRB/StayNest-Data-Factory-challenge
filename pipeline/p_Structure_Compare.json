@@ -1,0 +1,125 @@
+{
+	"name": "p_Structure_Compare",
+	"properties": {
+		"activities": [
+			{
+				"name": "Structure_Of_IncomingFile",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_Employee_tgt_Storage",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_Filesystem": "learnit",
+							"p_Directory": "source",
+							"p_Filename": "patients.csv"
+						}
+					},
+					"fieldList": [
+						"structure"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "Structure_Of_ReferenceFile",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_Employee_tgt_Storage",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_Filesystem": "learnit",
+							"p_Directory": "ReferenceFiles",
+							"p_Filename": "Patient_ReferenceFile.csv"
+						}
+					},
+					"fieldList": [
+						"structure"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "CompareTheStructure",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Structure_Of_IncomingFile",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Structure_Of_ReferenceFile",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(activity('Structure_Of_IncomingFile').output.structure,activity('Structure_Of_ReferenceFile').output.structure)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Pass",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "PassOrFail",
+								"value": "Pass"
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"PassOrFail": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Practice"
+		},
+		"annotations": []
+	}
+}
